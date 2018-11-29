@@ -3,11 +3,11 @@ C_OBJECTS = $(patsubst %.c, %.o, $(C_SOURCES))
 S_SOURCES = $(shell find . -name "*.s")
 S_OBJECTS = $(patsubst %.s, %.o, $(S_SOURCES))
 
-CC = i386-elf-gcc
-LD = i386-elf-ld
+CC = gcc
+LD = ld
 ASM = nasm
 
-C_FLAGS = -c -Wall -m32 -ggdb -gstabs+ -nostdinc -fno-builtin -fno-stack-protector -I include
+C_FLAGS = -std=c11 -c -Wall -m32 -ggdb -gstabs+ -nostdinc -fno-builtin -fno-stack-protector -I include
 LD_FLAGS = -T scripts/kernel.ld -m elf_i386 -nostdlib
 #LD_FLAGS = -T scripts/kernel.ld -nostdlib
 ASM_FLAGS = -f elf -g -F stabs
@@ -32,24 +32,23 @@ clean:
 
 .PHONY:update_image
 update_image:
-	hdiutil attach -mountpoint image floppy.img 
+	mount floppy.img image/ 
 	cp hx_kernel image/hx_kernel
 	sync
-	hdiutil detach image
+	umount image/
 
 .PHONY:mount_image
 mount_image:
-	hdiutil attach -mountpoint ./image/ ./floppy.img
-	#sudo mount floppy.img /mnt/kernel
+	mount floppy.img image/
 
 .PHONY:umount_image
 umount_image:
-	hdiutil detach ./image
-#	sudo umount /mnt/kernel
+	#hdiutil detach ./image
+	umount image/
 
 .PHONY:qemu
 qemu:
-	/opt/QEMU/Programs/qemu -fda floppy.img -boot a
+	qemu-system-i386 -fda floppy.img -boot a
 
 .PHONY:bochs
 bochs:
@@ -57,6 +56,6 @@ bochs:
 
 .PHONY:debug
 debug:
-	qemu -S -s -fda floppy.img -boot a &
+	qemu-system-i386 -S -s -fda floppy.img -boot a &
 	sleep 1
 	cgdb -x tools/gdbinit
